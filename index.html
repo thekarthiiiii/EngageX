@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Order System</title>
+    
+    <!-- FORCED CHROME REDIRECT: Fixes the Instagram Browser blockage -->
+    <script>
+        (function() {
+            var ua = navigator.userAgent || navigator.vendor || window.opera;
+            var isInstagram = (ua.indexOf('Instagram') > -1) || (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
+            if (isInstagram && ua.indexOf('Android') > -1) {
+                var chromeIntent = "intent://" + window.location.href.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;end";
+                window.location.href = chromeIntent;
+            }
+        })();
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <style>
+        :root { --primary: #00ffff; --secondary: #0080ff; --white: #ffffff; }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; width: 100%; min-height: 100vh; }
+        .glass { background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(0, 255, 255, 0.1); padding: clamp(1.5rem, 5vw, 4rem); border-radius: clamp(2rem, 10vw, 5rem); width: 95%; max-width: 800px; margin: auto; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #000 !important; font-weight: 800; transition: all 0.3s ease; font-size: 1.1rem; letter-spacing: 1px; white-space: nowrap; }
+        .text-neon { color: #00ffff; text-shadow: 0 0 15px rgba(0, 255, 255, 0.6); }
+        .brand-container { display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+        .brand-text-main { font-size: clamp(2.5rem, 12vw, 7rem); font-weight: 900; text-transform: uppercase; color: var(--white); }
+        .brand-x-text { font-size: clamp(5rem, 25vw, 15rem); font-weight: 900; line-height: 0.8; color: var(--primary); text-shadow: 0 0 35px rgba(0, 255, 255, 0.9); position: relative; top: clamp(-5px, -1vw, -15px); }
+        .service-title { font-size: clamp(1rem, 4.2vw, 2.2rem); font-weight: 900; letter-spacing: -0.5px; line-height: 1.2; max-width: 90%; margin: 0 auto; }
+        .price-text { font-size: clamp(4.5rem, 20vw, 9.5rem); font-weight: 900; line-height: 1; margin: 0.5rem 0; white-space: nowrap; }
+        .large-input { background: #050505; border: 2px solid #1a1a1a; color: white; padding: 1.5rem; border-radius: 20px; width: 100%; outline: none; font-size: clamp(1rem, 3.5vw, 1.3rem); transition: 0.3s; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; overflow-y: auto; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .badge-special { background: linear-gradient(90deg, #ff00ff, #00ffff); color: #000; padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 900; text-transform: uppercase; animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+
+    <div id="user-view">
+        <header class="py-16 md:py-24 text-center px-4">
+            <div class="brand-container" data-aos="zoom-in">
+                <span class="brand-text-main">Engage</span>
+                <span class="brand-x-text">X</span>
+            </div>
+            <p class="mt-16 text-zinc-500 uppercase tracking-[0.3em] font-bold text-[10px] md:text-xs italic">Elevating Your Digital Presence</p>
+        </header>
+        <main id="services-grid" class="flex flex-col gap-12 md:gap-20 items-center px-4 pb-40"></main>
+    </div>
+
+    <div id="order-modal" class="modal-overlay">
+        <div class="glass !p-8 md:!p-12 w-full max-w-xl text-center relative border-t-4 border-cyan-400">
+            <div id="step-1">
+                <h2 class="text-4xl md:text-6xl font-black mb-8 uppercase text-neon">Order Details</h2>
+                <div id="checkout-summary" class="bg-zinc-900/50 p-6 rounded-3xl text-left mb-6 border border-zinc-800/50"></div>
+                <div class="space-y-4">
+                    <input type="number" id="order-qty" placeholder="Enter Quantity (Min 100)" oninput="calculateTotal()" class="large-input text-center font-black text-cyan-400" min="100">
+                    <input type="text" id="target-link" placeholder="Paste Link here..." class="large-input text-center italic font-bold">
+                </div>
+                <div class="my-8 p-6 bg-cyan-950/20 rounded-3xl border border-cyan-500/20">
+                    <p class="text-zinc-500 uppercase text-xs font-bold mb-1">Total Payable</p>
+                    <p class="text-5xl font-black text-white">₹<span id="total-display">0</span></p>
+                </div>
+                <button onclick="goToPayment()" class="btn-primary w-full py-5 rounded-2xl uppercase">Proceed to Order</button>
+            </div>
+            <div id="step-2" class="hidden">
+                <h2 class="text-4xl md:text-6xl font-black mb-8 uppercase text-neon">Pay & Confirm</h2>
+                <textarea id="order-copy-box" class="large-input h-48 text-xs font-mono mb-6 bg-black/80" readonly></textarea>
+                <button onclick="copyAndRedirect()" class="btn-primary w-full py-5 rounded-2xl uppercase">Copy & Pay Now</button>
+            </div>
+            <button onclick="closeModal()" class="mt-6 text-zinc-500 font-bold uppercase text-[10px]">Back to Home</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({ duration: 800, once: true });
+
+        const myOffers = [{ name: "PREMIUM INSTAGRAM FOLLOWERS", basePrice: 270, isSpecial: true, desc: "A+++ GRADE ELITE SERVICE • ZERO DROP QUALITY • LIFETIME REFILL GUARANTEE" }];
+
+        function renderUserView() {
+            const grid = document.getElementById('services-grid');
+            grid.innerHTML = '';
+            myOffers.forEach((s, i) => {
+                const hookPrice = (s.basePrice / 10).toFixed(0);
+                grid.innerHTML += `
+                <div class="glass text-center relative" data-aos="fade-up">
+                    <h2 class="service-title uppercase mb-2 leading-tight">${s.name}</h2>
+                    <p class="text-[10px] md:text-xs font-bold text-zinc-400 mb-6 uppercase tracking-widest">${s.desc}</p>
+                    <div class="price-text">₹${hookPrice}</div>
+                    <p class="text-sm md:text-lg font-black text-cyan-400 mb-8 uppercase italic">100 UNITS</p>
+                    <button onclick="openOrder(${i})" class="btn-primary w-full py-5 md:py-8 !text-2xl rounded-[1.5rem] active:scale-95">START ORDER</button>
+                </div>`;
+            });
+        }
+
+        function openOrder(i) {
+            window.activeOffer = myOffers[i];
+            document.getElementById('checkout-summary').innerHTML = `<h3 class="font-black text-lg md:text-xl uppercase">${window.activeOffer.name}</h3><p class="text-zinc-500 text-xs mt-1">Rate: ₹${window.activeOffer.basePrice} per 1k</p>`;
+            document.getElementById('order-modal').style.display = 'flex';
+        }
+
+        function calculateTotal() {
+            const qty = document.getElementById('order-qty').value;
+            const total = (qty / 1000) * window.activeOffer.basePrice;
+            document.getElementById('total-display').innerText = qty > 0 ? Math.round(total) : "0";
+        }
+
+        function goToPayment() {
+            const qty = document.getElementById('order-qty').value;
+            const link = document.getElementById('target-link').value;
+            const finalPrice = document.getElementById('total-display').innerText;
+            if(qty < 100 || link.length < 5) return alert("Please enter valid quantity and link");
+            document.getElementById('order-copy-box').value = `🌟 NEW ORDER\nService: ${window.activeOffer.name}\nQty: ${qty}\nPrice: ₹${finalPrice}\nLink: ${link}`;
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+        }
+
+        function copyAndRedirect() {
+            // SECURITY UPDATE: Payee name must match the GPay ID profile
+            const upiId = "mumanath3-2@oksbi";
+            const profileName = "SHIBINA M"; 
+            const finalPrice = document.getElementById('total-display').innerText;
+            const orderDetails = document.getElementById('order-copy-box').value;
+            
+            navigator.clipboard.writeText(orderDetails).then(() => {
+                // SECURITY UPDATE: Clean UPI link to avoid GPay 'Suspicious' flag
+                const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(profileName)}&am=${finalPrice}&cu=INR&tn=Order_EngageX`;
+                window.location.href = upiUrl;
+                
+                setTimeout(() => {
+                    alert("Order details copied! Please complete payment in GPay.");
+                    closeModal();
+                }, 1000);
+            });
+        }
+
+        function closeModal() { document.getElementById('order-modal').style.display = 'none'; document.getElementById('step-1').classList.remove('hidden'); document.getElementById('step-2').classList.add('hidden'); }
+        renderUserView();
+    </script>
+</body>
+</html>
